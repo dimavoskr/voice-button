@@ -114,7 +114,304 @@
 
         const micButton = document.getElementById('micButton');
         const wavesContainer = document.getElementById('waves');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Reactive Button</title>
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            flex-direction: column;
+        }
+
+        .mic-button {
+            position: relative;
+            z-index: 10;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+            touch-action: manipulation;
+        }
+
+        .mic-button:active {
+            transform: scale(0.92);
+        }
+
+        .mic-button.active {
+            background: #ff4757;
+        }
+
+        .mic-button.fallback {
+            background: #ffa502;
+        }
+
+        .mic-icon {
+            width: 45px;
+            height: 45px;
+            fill: #667eea;
+            transition: fill 0.3s;
+            pointer-events: none;
+        }
+
+        .mic-button.active .mic-icon,
+        .mic-button.fallback .mic-icon {
+            fill: white;
+        }
+
+        .waves {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .wave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            opacity: 0;
+        }
+
+        .status {
+            position: absolute;
+            bottom: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            white-space: nowrap;
+            font-weight: 500;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            width: 280px;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            width: 280px;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-group {
+            margin-bottom: 10px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .control-value {
+            color: #667eea;
+            font-weight: 600;
+            min-width: 35px;
+            text-align: right;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .mic-button {
+                width: 120px;
+                height: 120px;
+            }
+
+            .mic-icon {
+                width: 55px;
+                height: 55px;
+            }
+
+            .status {
+                font-size: 18px;
+                bottom: -100px;
+            }
+
+            .controls {
+                width: calc(100vw - 40px);
+                max-width: 320px;
+            }
+        }
+
+        @media (max-width: 375px) {
+            .mic-button {
+                width: 100px;
+                height: 100px;
+            }
+
+            .mic-icon {
+                width: 45px;
+                height: 45px;
+            }
+
+            .controls {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <div class="control-group">
+            <div class="control-label">
+                <span>Sensitivity</span>
+                <span class="control-value" id="sensitivityValue">1.5</span>
+            </div>
+            <input type="range" id="sensitivity" min="0.5" max="3" step="0.1" value="1.5">
+        </div>
+        <div class="control-group">
+            <div class="control-label">
+                <span>Wave Size</span>
+                <span class="control-value" id="waveSizeValue">150</span>
+            </div>
+            <input type="range" id="waveSize" min="100" max="300" step="10" value="150">
+        </div>
+        <div class="control-group">
+            <div class="control-label">
+                <span>Decay Speed</span>
+                <span class="control-value" id="decayValue">0.95</span>
+            </div>
+            <input type="range" id="decay" min="0.90" max="0.98" step="0.01" value="0.95">
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="waves" id="waves"></div>
+        <button class="mic-button" id="micButton">
+            <svg class="mic-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 15c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/>
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+            </svg>
+        </button>
+        <div class="status" id="status">Click to start</div>
+    </div>
+
+    <script>
+        let audioContext;
+        let analyser;
+        let microphone;
+        let dataArray;
+        let isListening = false;
+        let isFallbackMode = false;
+        let animationId;
+        let testSoundLevel = 0;
+
+        // Dynamic sensitivity controls
+        let WAVE_SENSITIVITY = 1.5;
+        let MIN_WAVE_SIZE = 80;
+        let MAX_WAVE_EXPANSION = 150;
+        let WAVE_SPACING = 40;
+        let DECAY_RATE = 0.95;
+
+        const micButton = document.getElementById('micButton');
+        const wavesContainer = document.getElementById('waves');
         const status = document.getElementById('status');
+
+        // Control elements
+        const sensitivitySlider = document.getElementById('sensitivity');
+        const sensitivityValue = document.getElementById('sensitivityValue');
+        const waveSizeSlider = document.getElementById('waveSize');
+        const waveSizeValue = document.getElementById('waveSizeValue');
+        const decaySlider = document.getElementById('decay');
+        const decayValue = document.getElementById('decayValue');
+
+        // Update sensitivity controls
+        sensitivitySlider.addEventListener('input', (e) => {
+            WAVE_SENSITIVITY = parseFloat(e.target.value);
+            sensitivityValue.textContent = WAVE_SENSITIVITY.toFixed(1);
+        });
+
+        waveSizeSlider.addEventListener('input', (e) => {
+            MAX_WAVE_EXPANSION = parseInt(e.target.value);
+            waveSizeValue.textContent = MAX_WAVE_EXPANSION;
+        });
+
+        decaySlider.addEventListener('input', (e) => {
+            DECAY_RATE = parseFloat(e.target.value);
+            decayValue.textContent = DECAY_RATE.toFixed(2);
+        });
 
         // Create wave elements
         const numWaves = 3;
@@ -138,6 +435,7 @@
 
         async function startListening() {
             try {
+                // Try to access microphone
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -151,13 +449,23 @@
                 microphone.connect(analyser);
                 
                 isListening = true;
+                isFallbackMode = false;
                 micButton.classList.add('active');
-                status.textContent = 'Listening...';
+                micButton.classList.remove('fallback');
+                status.textContent = 'Listening to microphone';
                 
                 animate();
             } catch (err) {
-                console.error('Error accessing microphone:', err);
-                status.textContent = 'Microphone access denied';
+                console.log('Microphone access denied or unavailable, using touch fallback');
+                
+                // Fallback to touch mode
+                isListening = true;
+                isFallbackMode = true;
+                micButton.classList.add('fallback');
+                micButton.classList.remove('active');
+                status.textContent = 'Touch mode - tap screen to pulse';
+                
+                animate();
             }
         }
 
@@ -167,8 +475,9 @@
             }
             
             isListening = false;
-            micButton.classList.remove('active');
-            status.textContent = 'Click to start listening';
+            isFallbackMode = false;
+            micButton.classList.remove('active', 'fallback');
+            status.textContent = 'Click to start';
             
             if (animationId) {
                 cancelAnimationFrame(animationId);
@@ -185,16 +494,25 @@
             
             animationId = requestAnimationFrame(animate);
             
-            analyser.getByteFrequencyData(dataArray);
+            let normalized;
             
-            // Calculate average volume
-            const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-            const normalized = average / 255;
+            if (isFallbackMode) {
+                // Touch fallback mode
+                testSoundLevel += (Math.random() - 0.5) * 0.1;
+                testSoundLevel = Math.max(0, Math.min(1, testSoundLevel));
+                testSoundLevel *= DECAY_RATE;
+                normalized = testSoundLevel * WAVE_SENSITIVITY;
+            } else {
+                // Real microphone mode
+                analyser.getByteFrequencyData(dataArray);
+                const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                normalized = (average / 255) * WAVE_SENSITIVITY;
+            }
             
-            // Animate waves based on sound
+            // Animate waves
             waves.forEach((wave, i) => {
                 const delay = i * 0.15;
-                const scale = 80 + (normalized * 150) + (i * 40);
+                const scale = MIN_WAVE_SIZE + (normalized * MAX_WAVE_EXPANSION) + (i * WAVE_SPACING);
                 const opacity = Math.max(0.3, normalized) * (1 - i * 0.2);
                 
                 wave.style.width = `${scale}px`;
@@ -203,6 +521,24 @@
                 wave.style.transition = `all ${0.1 + delay}s ease-out`;
             });
         }
+
+        // Touch fallback: pulse on screen touch (except button and controls)
+        document.body.addEventListener('touchstart', (e) => {
+            if (isListening && isFallbackMode && 
+                !micButton.contains(e.target) && 
+                !document.querySelector('.controls').contains(e.target)) {
+                testSoundLevel = (Math.random() * 0.8 + 0.4) * WAVE_SENSITIVITY;
+            }
+        });
+
+        // Also support mouse for desktop testing
+        document.body.addEventListener('mousedown', (e) => {
+            if (isListening && isFallbackMode && 
+                !micButton.contains(e.target) && 
+                !document.querySelector('.controls').contains(e.target)) {
+                testSoundLevel = (Math.random() * 0.8 + 0.4) * WAVE_SENSITIVITY;
+            }
+        });
     </script>
 </body>
 </html>
